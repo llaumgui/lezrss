@@ -26,92 +26,99 @@
 // ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
 //
 
-include_once( 'kernel/common/template.php' );
-$rssId = $Params['RssId'];
-$sectionName = 'Global';
+$Module = $Params['Module'];
+$rssIni = eZINI::instance('lezrss.ini');
 
-$tpl = templateInit();
-$ini = eZINI::instance('site.ini');
-$rssIni = eZINI::instance('rss.ini');
-$Module = $Params["Module"];
-
-
-
-/*
- * On détermine le nodeID
- */
-if ( $rssId )
+// Add default rss feed
+if ( !isset ( $Params['RSSFeed'] ) )
 {
-    $nodeID = $rssId;
+    $feedName = $rssIni->variable('RSSSettings', 'DefaultRSS');
+    if( empty($feedName) )
+    {
+    	eZDebug::writeError( 'No RSS feed specified' );
+        return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
+    }
 }
 else
 {
-    $uriString = '';
+    $feedName = $Params['RSSFeed'];
+}
+$RSSExport = leZRSSExport::fetchByName( $feedName );
 
-    if ( array_key_exists(0, $Module->OriginalParameters) )
+// Get and check if RSS Feed exists
+if ( !$RSSExport )
+{
+    eZDebug::writeError( 'Could not find RSSExport : ' . $Params['RSSFeed'] );
+    return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
+}
+
+$config = eZINI::instance( 'site.ini' );
+$cacheTime = intval( $config->variable( 'RSSSettings', 'CacheTime' ) );
+$cacheTime = 0; // for testing
+
+$lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
+
+if ( $cacheTime <= 0 )
+{
+    $rssContent = $RSSExport->tplRSS( $lastModified );
+}
+else
+{
+    $cacheDir = eZSys::cacheDirectory();
+    $currentSiteAccessName = $GLOBALS['eZCurrentAccess']['name'];
+    $cacheFilePath = $cacheDir . '/rss/' . md5( $currentSiteAccessName . $feedName ) . '.xml';
+
+    if ( !is_dir( dirname( $cacheFilePath ) ) )
     {
-        $uriString = $Module->OriginalParameters[0];
+        eZDir::mkdir( dirname( $cacheFilePath ), false, true );
     }
 
-    /* Prefixe */
-    if ( $rssIni->hasVariable( 'RSSSettings', 'PathPrefix' )
-      && $rssIni->variable( 'RSSSettings', 'PathPrefix' ) != ''  )
-    {
-        $uriString = eZURLAliasML::cleanURL( $rssIni->variable( 'RSSSettings', 'PathPrefix' ) ) . $uriString;
-    }
+    $cacheFile = eZClusterFileHandler::instance( $cacheFilePath );
 
-    eZURLAliasML::cleanURL($uriString);
-
-    if ( empty( $uriString ) )
+    if ( !$cacheFile->exists() or ( time() - $cacheFile->mtime() > $cacheTime ) )
     {
-        $uri = eZURI::instance( $ini->variable( 'SiteSettings', 'IndexPage') );
-        $url = $uri->elements();
-        $url = eZURLAliasML::urlToAction( $url );
-        $nodeID = eZURLAliasML::nodeIDFromAction( $url );
+        $xmlDoc = $RSSExport->attribute( 'rss-xml' );
+        // Get current charset
+        $charset = eZTextCodec::internalCharset();
+        $rssContent = $xmlDoc->saveXML();
+        $cacheFile->storeContents( $rssContent, 'rsscache', 'xml' );
     }
     else
     {
-       $uri = eZURI::instance($uriString);
-       eZURLAliasML::translate($uri);
-       $url = $uri->elements();
-       $url = eZURLAliasML::urlToAction( $url );
-       $nodeID = eZURLAliasML::nodeIDFromAction( $url );
+        $lastModified = gmdate( 'D, d M Y H:i:s', $cacheFile->mtime() ) . ' GMT';
+
+        if( isset( $_SERVER['HTTP_IF_MODIFIED_SINCE'] ) )
+        {
+            $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
+
+            // Internet Explorer specific
+            $pos = strpos($ifModifiedSince,';');
+            if ( $pos !== false )
+                $ifModifiedSince = substr( $ifModifiedSince, 0, $pos );
+
+            if( strcmp( $lastModified, $ifModifiedSince ) == 0 )
+            {
+                header( 'HTTP/1.1 304 Not Modified' );
+                header( 'Last-Modified: ' . $lastModified );
+                header( 'X-Powered-By: eZ Publish' );
+                eZExecution::cleanExit();
+           }
+        }
+        $rssContent = $cacheFile->fetchContents();
     }
 }
 
-
-/*
- * Configuration spécifique
- */
-if ( $rssIni->hasSection('NodeID_'.$nodeID) )
-{
-    $sectionName = 'NodeID_'. $nodeID;
-}
-$feedTitle = $rssIni->variable( $sectionName, "FeedTitle" );
-$feedDescription = $rssIni->variable( $sectionName, "FeedDescription" );
-$feedImage = $rssIni->variable( $sectionName, "FeedImage" );
-$feedLimit = $rssIni->variable( $sectionName, "FeedLimit" );
-
-$node = eZContentObjectTreeNode::fetch( $nodeID );
-
-
-/*
- * On affecte les templates
- */
-$tpl->setVariable( 'node', $node );
-$tpl->setVariable( 'title', $feedTitle );
-$tpl->setVariable( 'description', $feedDescription );
-$tpl->setVariable( 'image', $feedImage );
-$tpl->setVariable( 'limit', $feedLimit );
-
-
-/* headers */
+// Set header settings
 $httpCharset = eZTextCodec::httpCharset();
-header( 'Content-Type: text/xml; charset=' . $httpCharset );
+header( 'Last-Modified: ' . $lastModified );
+header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
+header( 'Content-Length: '.strlen($rssContent) );
+header( 'X-Powered-By: eZ Publish' );
 
-$Result = array();
-$Result['pagelayout'] = 'feed/rss_pagelayout.tpl';
-$Result['content'] = $tpl->fetch( 'design:feed/channel_full.tpl' );
+while ( @ob_end_clean() );
 
+echo $rssContent;
+
+eZExecution::cleanExit();
 
 ?>

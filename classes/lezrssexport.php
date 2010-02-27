@@ -29,15 +29,72 @@
 class leZRSSExport extends eZRSSExport
 {
 
-/*!
-     Get a RSS xml document based on the RSS 2.0 standard based on the RSS Export settings defined by this object
+  static function definition()
+  {
+        $definition = parent::definition();
+        $definition['class_name'] = 'leZRSSExport';
+        return $definition;
+    }
 
-     \return RSS 2.0 XML document
-    */
-    function fetchRSS2_0()
+
+
+    /**
+     * Fetches the RSS Export by ID.
+     *
+     * @param RSS Export ID
+     * @return leZRSSExport
+     */
+    static function fetch( $id, $asObject = true, $status = leZRSSExport::STATUS_VALID )
     {
-        $locale = eZLocale::instance();
+        return eZPersistentObject::fetchObject( leZRSSExport::definition(),
+                                                null,
+                                                array( "id" => $id, 'status' => $status ),
+                                                $asObject );
+    }
 
+
+
+    /**
+     * Fetches the RSS Export by feed access url and is active.
+     *
+     * @param RSS Export access url
+     * @return leZRSSExport
+     */
+    static function fetchByName( $access_url, $asObject = true )
+    {
+        return eZPersistentObject::fetchObject( leZRSSExport::definition(),
+                                                null,
+                                                array( 'access_url' => $access_url,
+                                                       'active' => 1,
+                                                       'status' => 1 ),
+                                                $asObject );
+    }
+
+
+
+    /**
+     * Get a RSS xml document based on rss2 template based on the RSS Export settings defined by this object
+     *
+     * @return RSS XML document
+     */
+    function tplRSS( $lastModified = null )
+    {
+    	if ( is_null($lastModified) )
+    	   $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
+
+    	// eZP 4.3
+        if ( is_callable( array( 'eZTemplate', 'factory') ) )
+        {
+	        $tpl = ezTemplate::factory();
+        }
+        // Deprecated on eZP 4.3
+        else
+        {
+            include_once( 'kernel/common/template.php' );
+            $tpl = templateInit();
+        }
+
+        $locale = eZLocale::instance();
         // Get URL Translation settings.
         $config = eZINI::instance();
         if ( $config->variable( 'URLTranslator', 'Translation' ) == 'enabled' )
@@ -60,43 +117,40 @@ class leZRSSExport extends eZRSSExport
             $baseItemURL = $this->attribute( 'url' ).'/'; //.$this->attribute( 'site_access' ).'/';
         }
 
-        $tpl = templateInit();
-        $tpl->setVariable( 'version', '2.0' );
+        $metaDataArray = $config->variable('SiteSettings','MetaDataArray');
 
+        /*
+         * Channel informations
+         */
         $channel = array(
-            'atom_link' => array(
-                'href', $baseItemURL . "rss/feed/" . $this->attribute( 'access_url' ),
-                'rel', 'self',
-                'type', 'application/rss+xml'
+            'atom:link' => array(
+                'href' => $baseItemURL . "rss/feed/" . $this->attribute( 'access_url' ),
+                'rel' => 'self',
+                'type' => 'application/rss+xml'
             ),
             'title' => $this->attribute( 'title' ),
             'link' => $this->attribute( 'url' ),
             'description' => $this->attribute( 'description' ),
-            'language' => $locale->httpLocaleCode()
+            'language' => $locale->httpLocaleCode(),
+            'pubDate' => $lastModified,
+            'copyright' => $metaDataArray['copyright'],
+            'generator' => 'eZ Publish (leZRSS)'
         );
-echo 'rr(';
-        return $tpl->fetch( 'design:rss2/channel.tpl' );
 
         $imageURL = $this->fetchImageURL();
         if ( $imageURL !== false )
         {
-            $image = $doc->createElement( 'image' );
-
-            $imageUrlNode = $doc->createElement( 'url' );
-            $imageUrlNode->appendChild( $doc->createTextNode( $imageURL ) );
-            $image->appendChild( $imageUrlNode );
-
-            $imageTitle = $doc->createElement( 'title' );
-            $imageTitle->appendChild( $doc->createTextNode( $this->attribute( 'title' ) ) );
-            $image->appendChild( $imageTitle );
-
-            $imageLink = $doc->createElement( 'link' );
-            $imageLink->appendChild( $doc->createTextNode( $this->attribute( 'url' ) ) );
-            $image->appendChild( $imageLink );
-
-            $channel->appendChild( $image );
+            $channel['image'] = array(
+                'url' => $imageURL,
+                'title' => $this->attribute( 'title' ),
+                'link' => $this->attribute( 'url' )
+            );
         }
+        $tpl->setVariable('channel', $channel );
 
+        /*
+         * Items informations
+         */
         $cond = array(
                     'rssexport_id'  => $this->ID,
                     'status'        => $this->Status
@@ -104,12 +158,13 @@ echo 'rr(';
         $rssSources = eZRSSExportItem::fetchFilteredList( $cond );
 
         $nodeArray = eZRSSExportItem::fetchNodeList( $rssSources, $this->getObjectListFilter() );
+        $items = array();
 
         if ( is_array( $nodeArray ) && count( $nodeArray ) )
         {
             $attributeMappings = eZRSSExportItem::getAttributeMappings( $rssSources );
 
-            foreach ( $nodeArray as $node )
+            foreach ( $nodeArray as $key => $node )
             {
                 $object = $node->attribute( 'object' );
                 $dataMap = $object->dataMap();
@@ -151,8 +206,6 @@ echo 'rr(';
                     return $retValue;
                 }
 
-                $item = $doc->createElement( 'item' );
-
                 // title RSS element with respective class attribute content
                 $titleContent =  $title->attribute( 'content' );
                 if ( $titleContent instanceof eZXMLText )
@@ -164,18 +217,6 @@ echo 'rr(';
                 {
                     $itemTitleText = $titleContent;
                 }
-
-                $itemTitle = $doc->createElement( 'title' );
-                $itemTitle->appendChild( $doc->createTextNode( $itemTitleText ) );
-                $item->appendChild( $itemTitle );
-
-                $itemLink = $doc->createElement( 'link' );
-                $itemLink->appendChild( $doc->createTextNode( $nodeURL ) );
-                $item->appendChild( $itemLink );
-
-                $itemGuid = $doc->createElement( 'guid' );
-                $itemGuid->appendChild( $doc->createTextNode( $nodeURL ) );
-                $item->appendChild( $itemGuid );
 
                 // description RSS element with respective class attribute content
                 $descriptionContent =  $description->attribute( 'content' );
@@ -189,11 +230,8 @@ echo 'rr(';
                     $itemDescriptionText = $descriptionContent;
                 }
 
-                $itemDescription = $doc->createElement( 'description' );
-                $itemDescription->appendChild( $doc->createTextNode( $itemDescriptionText ) );
-                $item->appendChild( $itemDescription );
-
                 // category RSS element with respective class attribute content
+                $itemCategoryText = '';
                 if ( $category )
                 {
                     $categoryContent =  $category->attribute( 'content' );
@@ -210,22 +248,23 @@ echo 'rr(';
                     {
                         $itemCategoryText = $categoryContent;
                     }
-
-                    $itemCategory = $doc->createElement( 'category' );
-                    $itemCategory->appendChild( $doc->createTextNode( $itemCategoryText ) );
-                    $item->appendChild( $itemCategory );
                 }
 
-                $itemPubDate = $doc->createElement( 'pubDate' );
-                $itemPubDate->appendChild( $doc->createTextNode( gmdate( 'D, d M Y H:i:s', $object->attribute( 'published' ) ) .' GMT' ) );
+                $itemPubDate = gmdate( 'D, d M Y H:i:s', $object->attribute( 'published' ) ) .' GMT';
 
-                $item->appendChild( $itemPubDate );
-
-                $channel->appendChild( $item );
+                $items[$key] = array(
+                    'title' => $itemTitleText,
+                    'link' => $nodeURL,
+                    'guid' => $nodeURL,
+                    'description' => $itemDescriptionText,
+                    'category' => $itemCategoryText,
+                    'pubDate' => $itemPubDate,
+                );
             }
         }
-
-        return $doc;
+        $tpl->setVariable( 'node_array', $nodeArray );
+        $tpl->setVariable( 'items', $items );
+        return $tpl->fetch('design:rss2/channel.tpl');
     }
 
 }
