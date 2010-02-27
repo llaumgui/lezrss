@@ -54,7 +54,7 @@ if ( !$RSSExport )
 
 $config = eZINI::instance( 'site.ini' );
 $cacheTime = intval( $config->variable( 'RSSSettings', 'CacheTime' ) );
-$cacheTime = 0; // for testing
+//$cacheTime = 0; // for testing
 
 $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
 
@@ -77,10 +77,7 @@ else
 
     if ( !$cacheFile->exists() or ( time() - $cacheFile->mtime() > $cacheTime ) )
     {
-        $xmlDoc = $RSSExport->attribute( 'rss-xml' );
-        // Get current charset
-        $charset = eZTextCodec::internalCharset();
-        $rssContent = $xmlDoc->saveXML();
+        $rssContent = $RSSExport->tplRSS( $lastModified );
         $cacheFile->storeContents( $rssContent, 'rsscache', 'xml' );
     }
     else
