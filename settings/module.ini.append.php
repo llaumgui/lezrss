@@ -3,7 +3,6 @@
 [ModuleSettings]
 ExtensionRepositories[]=lezrss
 
-ModuleList[]
 ModuleList[]=rss2
 
 */ ?>
