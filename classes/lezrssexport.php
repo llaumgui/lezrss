@@ -124,7 +124,7 @@ class leZRSSExport extends eZRSSExport
          */
         $channel = array(
             'atom:link' => array(
-                'href' => $baseItemURL . "rss/feed/" . $this->attribute( 'access_url' ),
+                'href' => $baseItemURL . "rss2/feed/" . $this->attribute( 'access_url' ),
                 'rel' => 'self',
                 'type' => 'application/rss+xml'
             ),

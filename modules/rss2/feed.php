@@ -66,7 +66,7 @@ else
 {
     $cacheDir = eZSys::cacheDirectory();
     $currentSiteAccessName = $GLOBALS['eZCurrentAccess']['name'];
-    $cacheFilePath = $cacheDir . '/rss/' . md5( $currentSiteAccessName . $feedName ) . '.xml';
+    $cacheFilePath = $cacheDir . '/rss2/' . md5( $currentSiteAccessName . $feedName ) . '.xml';
 
     if ( !is_dir( dirname( $cacheFilePath ) ) )
     {
@@ -78,7 +78,7 @@ else
     if ( !$cacheFile->exists() or ( time() - $cacheFile->mtime() > $cacheTime ) )
     {
         $rssContent = $RSSExport->tplRSS( $lastModified );
-        $cacheFile->storeContents( $rssContent, 'rsscache', 'xml' );
+        $cacheFile->storeContents( $rssContent, 'rss2cache', 'xml' );
     }
     else
     {
