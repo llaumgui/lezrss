@@ -9,4 +9,8 @@ Status
 ======
 RC1.
 
+Continuous integration
+======================
+leZRSS is under continuous integration: [http://ci.llaumgui.com/job/leZRSS/](http://ci.llaumgui.com/job/leZRSS/)
+
 ![eZ Publish Certified Developer](http://www.llaumgui.com/images/ezcertdev.png)
