@@ -1,41 +1,23 @@
 <?php
-//
-// Created on: <01-Sep-2008 19:00:00 GKUL>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: leZRSS
-// SOFTWARE RELEASE: 1.0
-// BUILD VERSION:
-// COPYRIGHT NOTICE: Copyright (c) 2008-2010 Guillaume Kulakowski and contributors
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the feed module
+ *
+ * @version //autogentag//
+ * @package LeZRSS
+ * @copyright Copyright (C) 2008-2012 Guillaume Kulakowski and contributors
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU General Public License v2.0
+ */
 
 $Module = $Params['Module'];
-$rssIni = eZINI::instance('lezrss.ini');
+$rssIni = eZINI::instance( 'lezrss.ini' );
 
 // Add default rss feed
 if ( !isset ( $Params['RSSFeed'] ) )
 {
-    $feedName = $rssIni->variable('RSSSettings', 'DefaultRSS');
+    $feedName = $rssIni->variable( 'RSSSettings', 'DefaultRSS' );
     if( empty($feedName) )
     {
-    	eZDebug::writeError( 'No RSS feed specified' );
+        eZDebug::writeError( 'No RSS feed specified' );
         return $Module->handleError( eZError::KERNEL_NOT_AVAILABLE, 'kernel' );
     }
 }
@@ -89,9 +71,11 @@ else
             $ifModifiedSince = $_SERVER['HTTP_IF_MODIFIED_SINCE'];
 
             // Internet Explorer specific
-            $pos = strpos($ifModifiedSince,';');
+            $pos = strpos( $ifModifiedSince, ';' );
             if ( $pos !== false )
+            {
                 $ifModifiedSince = substr( $ifModifiedSince, 0, $pos );
+            }
 
             if( strcmp( $lastModified, $ifModifiedSince ) == 0 )
             {
@@ -109,7 +93,7 @@ else
 $httpCharset = eZTextCodec::httpCharset();
 header( 'Last-Modified: ' . $lastModified );
 header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
-header( 'Content-Length: '.strlen($rssContent) );
+header( 'Content-Length: '.strlen( $rssContent ) );
 header( 'X-Powered-By: eZ Publish' );
 
 while ( @ob_end_clean() );

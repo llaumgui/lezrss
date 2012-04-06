@@ -1,36 +1,29 @@
 <?php
-//
-// Created on: <01-Sep-2008 19:00:00 GKUL>
-//
-// ## BEGIN COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-// SOFTWARE NAME: leZRSS
-// SOFTWARE RELEASE: 1.0
-// BUILD VERSION:
-// COPYRIGHT NOTICE: Copyright (c) 2008-2010 Guillaume Kulakowski and contributors
-// SOFTWARE LICENSE: GNU General Public License v2.0
-// NOTICE: >
-//   This program is free software; you can redistribute it and/or
-//   modify it under the terms of version 2.0  of the GNU General
-//   Public License as published by the Free Software Foundation.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of version 2.0 of the GNU General
-//   Public License along with this program; if not, write to the Free
-//   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-//   MA 02110-1301, USA.
-//
-// ## END COPYRIGHT, LICENSE AND WARRANTY NOTICE ##
-//
+/**
+ * File containing the leZRSSExport class
+ *
+ * @version //autogentag//
+ * @package LeZRSS
+ * @copyright Copyright (C) 2008-2012 Guillaume Kulakowski and contributors
+ * @license http://www.gnu.org/licenses/gpl-2.0.html GNU General Public License v2.0
+ */
 
+/**
+ * The leZRSSExport class extends eZRSSExport to provide better functionnalities
+ *
+ * @package LeZRSS
+ * @version //autogentag//
+ */
 class leZRSSExport extends eZRSSExport
 {
 
-  static function definition()
-  {
+    /**
+     * Provide eZPersistentObject definition
+     *
+     * @return string
+     */
+    static function definition()
+    {
         $definition = parent::definition();
         $definition['class_name'] = 'leZRSSExport';
         return $definition;
@@ -41,8 +34,9 @@ class leZRSSExport extends eZRSSExport
     /**
      * Fetches the RSS Export by ID.
      *
-     * @param RSS Export ID
-     * @return leZRSSExport
+     * @param integed $id
+     * @param boolean $asObject
+     * @param integer $status
      */
     static function fetch( $id, $asObject = true, $status = leZRSSExport::STATUS_VALID )
     {
@@ -57,8 +51,8 @@ class leZRSSExport extends eZRSSExport
     /**
      * Fetches the RSS Export by feed access url and is active.
      *
-     * @param RSS Export access url
-     * @return leZRSSExport
+     * @param string $access_url
+     * @param boolean $asObject
      */
     static function fetchByName( $access_url, $asObject = true )
     {
@@ -75,22 +69,25 @@ class leZRSSExport extends eZRSSExport
     /**
      * Get a RSS xml document based on rss2 template based on the RSS Export settings defined by this object
      *
-     * @return RSS XML document
+     * @param string $lastModified
+     * @return NULL
      */
     function tplRSS( $lastModified = null )
     {
-    	if ( is_null($lastModified) )
-    	   $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
+        if ( is_null( $lastModified ) )
+        {
+            $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
+        }
 
-    	// eZP 4.3
+        // eZP 4.3
         if ( is_callable( array( 'eZTemplate', 'factory') ) )
         {
-	        $tpl = ezTemplate::factory();
+            $tpl = ezTemplate::factory();
         }
         // Deprecated on eZP 4.3
         else
         {
-            include_once( 'kernel/common/template.php' );
+            include_once 'kernel/common/template.php';
             $tpl = templateInit();
         }
 
@@ -117,7 +114,7 @@ class leZRSSExport extends eZRSSExport
             $baseItemURL = $this->attribute( 'url' ).'/'; //.$this->attribute( 'site_access' ).'/';
         }
 
-        $metaDataArray = $config->variable('SiteSettings','MetaDataArray');
+        $metaDataArray = $config->variable( 'SiteSettings', 'MetaDataArray' );
 
         /*
          * Channel informations
@@ -146,7 +143,7 @@ class leZRSSExport extends eZRSSExport
                 'link' => $this->attribute( 'url' )
             );
         }
-        $tpl->setVariable('channel', $channel );
+        $tpl->setVariable( 'channel', $channel );
 
         /*
          * Items informations
@@ -264,7 +261,7 @@ class leZRSSExport extends eZRSSExport
         }
         $tpl->setVariable( 'node_array', $nodeArray );
         $tpl->setVariable( 'items', $items );
-        return $tpl->fetch('design:rss2/channel.tpl');
+        return $tpl->fetch( 'design:rss2/channel.tpl' );
     }
 
 }
