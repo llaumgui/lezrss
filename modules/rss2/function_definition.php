@@ -18,7 +18,14 @@ $FunctionList['list'] = array(
         'method'  => 'fetchList'
     ),
     'parameter_type' => 'standard',
-    'parameters' => array(  )
+    'parameters' => array(
+        array(
+            'name' => 'node_id',
+            'type' => 'integer',
+            'required' => false,
+            'default' => null
+        )
+    )
 );
 
 ?>

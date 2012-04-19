@@ -27,11 +27,28 @@ class eZRssFunctionCollection
     /**
      * Fetch
      *
+     * @param int $eZContentObjectTreeNodeID
      * @return multitype:NULL
      */
-    function fetchList()
+    function fetchList( $eZContentObjectTreeNodeID = null )
     {
-        $result = array( 'result' => eZRSSExport::fetchList() );
+        if ( is_null( $eZContentObjectTreeNodeID ) )
+        {
+            $result = array( 'result' => eZRSSExport::fetchList() );
+        }
+        else
+        {
+            $asObject = true;
+            $conds = array();
+            $conds['ezrss_export.status'] = eZRSSExport::STATUS_VALID;
+            $conds['ezrss_export_item.source_node_id'] = $eZContentObjectTreeNodeID;
+
+            $custom_fields = array( 'ezrss_export.*' );
+            $custom_tables = array( 'ezrss_export_item' );
+            $custom_conds = ' AND ezrss_export.id = ezrss_export_item.rssexport_id GROUP BY ezrss_export.id';
+
+            $result = array( 'result' => eZPersistentObject::fetchObjectList( eZRSSExport::definition(), array(), $conds, null, null, $asObject, false, $custom_fields, $custom_tables, $custom_conds ) );
+        }
         return $result;
     }
 }
