@@ -26,6 +26,7 @@ class leZRSSExport extends eZRSSExport
     {
         $definition = parent::definition();
         $definition['class_name'] = 'leZRSSExport';
+
         return $definition;
     }
 
@@ -79,19 +80,9 @@ class leZRSSExport extends eZRSSExport
             $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
         }
 
-        // eZP 4.3
-        if ( is_callable( array( 'eZTemplate', 'factory') ) )
-        {
-            $tpl = ezTemplate::factory();
-        }
-        // Deprecated on eZP 4.3
-        else
-        {
-            include_once 'kernel/common/template.php';
-            $tpl = templateInit();
-        }
-
+        $tpl = ezTemplate::factory();
         $locale = eZLocale::instance();
+
         // Get URL Translation settings.
         $config = eZINI::instance();
         if ( $config->variable( 'URLTranslator', 'Translation' ) == 'enabled' )
