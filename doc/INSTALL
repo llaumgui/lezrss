@@ -1,36 +1,28 @@
-leZRSS 1.0 extension installation documentation
+leZRSS
+======
+
+Requirements
+------------
+* eZ Publish 4.x
 
 About leZRSS
 ------------
 
-leZRSS is an improvement of eZRSS native function :
+leZRSS is an improvement of eZRSS native function:
 
 * Adds fetch for get all RSS feed defined
 * Adds module rss2 for use template system in RSS
 
-
-
 Installation
 ------------
 
- 1. Unpack/unzip
+* Extract the leZRSS extension, and place it in the extensions folder.
 
-    Unpack the downloaded tar.gz package into the 'extension' directory of your
-    eZ Publish installation.
+* Enable the extension in eZ Publish. Do this by opening settings/override/site.ini.append.php, and add in the [ExtensionSettings] block:
+~~
+ActiveExtensions[]=lezrss
+~~
 
- 2. Activate extension
+* Generate the autoloads with the command: php bin/php/ezpgenerateautoloads.php
 
-    Activate the extension by using the admin interface ( Setup -> Extensions ) or by
-    prepending lezrss to ActiveExtensions[] in settings/override/site.ini.append.php:
-
-    [ExtensionSettings]
-    ActiveExtensions[]=lezrss
-
- 3. Regenerate autoload array
-
-    Check the eZ Publish docs for your version on how this is done.
-    Or go to Setup -> Extensions and click on the button there.
-
- 4. Clear caches
-
-    Clear INI and template caches (from admin 'Setup' tab or commandline).
+* Clear template override cache with the command: php bin/php/ezcache.php --clear-id=template-override
