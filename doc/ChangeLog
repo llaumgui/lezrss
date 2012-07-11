@@ -1,9 +1,3 @@
-ChangeLog
----------
-
- - leZRSS 1.X
-    * Put in continuous integration
-	* Allow to fetch rss_export for a specific node_id
-
- - leZRSS 1.0
-    * First release
+leZRSS 1.0 (2012/xx/xx)
+------------------------
+- First public release.
