@@ -1,3 +1,5 @@
+__Project hosted on eZ Projects Forge: [http://projects.ez.no/lezrss](http://projects.ez.no/lezrss)__
+
 Introduction
 ============
 leZRSS is an improvement of eZRSS native function :
