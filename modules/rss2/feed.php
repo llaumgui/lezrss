@@ -11,7 +11,6 @@
 $Module = $Params['Module'];
 $rssIni = eZINI::instance( 'lezrss.ini' );
 
-// Add default rss feed
 if ( !isset ( $Params['RSSFeed'] ) )
 {
     $feedName = $rssIni->variable( 'RSSSettings', 'DefaultRSS' );
@@ -36,7 +35,6 @@ if ( !$RSSExport )
 
 $config = eZINI::instance( 'site.ini' );
 $cacheTime = intval( $config->variable( 'RSSSettings', 'CacheTime' ) );
-//$cacheTime = 0; // for testing
 
 $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
 
@@ -73,9 +71,7 @@ else
             // Internet Explorer specific
             $pos = strpos( $ifModifiedSince, ';' );
             if ( $pos !== false )
-            {
                 $ifModifiedSince = substr( $ifModifiedSince, 0, $pos );
-            }
 
             if( strcmp( $lastModified, $ifModifiedSince ) == 0 )
             {
@@ -92,11 +88,17 @@ else
 // Set header settings
 $httpCharset = eZTextCodec::httpCharset();
 header( 'Last-Modified: ' . $lastModified );
-header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
+if ( $RSSExport->attribute( 'rss_version' ) === 'ATOM' )
+    header( 'Content-Type: application/xml; charset=' . $httpCharset );
+else
+    header( 'Content-Type: application/rss+xml; charset=' . $httpCharset );
 header( 'Content-Length: '.strlen( $rssContent ) );
 header( 'X-Powered-By: eZ Publish' );
 
-while ( @ob_end_clean() );
+for ( $i = 0, $obLevel = ob_get_level(); $i < $obLevel; ++$i )
+{
+    ob_end_clean();
+}
 
 echo $rssContent;
 
