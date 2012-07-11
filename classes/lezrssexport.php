@@ -80,7 +80,7 @@ class leZRSSExport extends eZRSSExport
             $lastModified = gmdate( 'D, d M Y H:i:s', time() ) . ' GMT';
         }
 
-        $tpl = ezTemplate::factory();
+        $tpl = eZTemplate::factory();
         $locale = eZLocale::instance();
 
         // Get URL Translation settings.
