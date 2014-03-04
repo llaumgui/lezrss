@@ -2,13 +2,9 @@ __Project hosted on eZ Projects Forge: [http://projects.ez.no/lezrss](http://pro
 
 Introduction
 ============
-leZRSS is an improvement of eZRSS native function :
+leZRSS is an improvement of eZRSS native eZ Publish 4 function :
 
 * Adds fetch for get all RSS feed defined
 * Adds module rss2 for use template system in RSS
-
-Continuous integration
-======================
-leZRSS is under continuous integration: [http://ci.llaumgui.com/job/leZRSS/](http://ci.llaumgui.com/job/leZRSS/)
 
 ![eZ Publish Certified Developer](http://www.llaumgui.com/images/ezcertdev.png)
